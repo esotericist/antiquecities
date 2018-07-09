@@ -1,0 +1,16 @@
+[
+{
+  "modid": "antiquecities",
+  "name": "Antique Cities",
+  "description": "Lost Cities integration for Antique Atlas.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["esotericist"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
