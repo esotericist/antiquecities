@@ -10,7 +10,7 @@ import hunternif.mc.atlas.client.TextureSet;
 import hunternif.mc.atlas.AntiqueAtlasMod;
 import hunternif.mc.atlas.ext.ExtBiomeData;
 import hunternif.mc.atlas.ext.ExtTileIdMap;
-import hunternif.mc.atlas.ext.ExtTileTextureMap;
+//import hunternif.mc.atlas.ext.ExtTileTextureMap;
 import hunternif.mc.atlas.network.PacketDispatcher;
 import hunternif.mc.atlas.network.bidirectional.PutBiomeTilePacket;
 
@@ -93,7 +93,8 @@ public class AntiqueCities
             adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
             if (occludable.contains(adjtilename)) {
                 tileupisoccludable = true;
-                adjtilename = ExtTileTextureMap.instance().getTexture(adjtilename).name;
+                adjtilename = adjtilename.substring(0, adjtilename.length() - 4);  
+                //ExtTileTextureMap.instance().getTexture(adjtilename).name;
             } else {
             adjtilename= "";
             //logger.info("above tileID: "+tileID+", name:"+adjtilename+", X: "+X+", Z: "+Z);
