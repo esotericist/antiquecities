@@ -10,7 +10,6 @@ import hunternif.mc.atlas.client.TextureSet;
 import hunternif.mc.atlas.AntiqueAtlasMod;
 import hunternif.mc.atlas.ext.ExtBiomeData;
 import hunternif.mc.atlas.ext.ExtTileIdMap;
-//import hunternif.mc.atlas.ext.ExtTileTextureMap;
 import hunternif.mc.atlas.network.PacketDispatcher;
 import hunternif.mc.atlas.network.bidirectional.PutBiomeTilePacket;
 
@@ -26,6 +25,8 @@ import mcjty.lostcities.dimensions.world.LostCityChunkGenerator;
 import mcjty.lostcities.dimensions.world.WorldTypeTools;
 import mcjty.lostcities.dimensions.world.lost.BuildingInfo;
 import mcjty.lostcities.dimensions.world.lost.Railway;
+
+import mcjty.lostcities.dimensions.world.lost.cityassets.*;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
@@ -61,13 +62,13 @@ public class AntiqueCities
     private void putTile(TileAPI tiles, World world, String name, int X, int Z, boolean occluded) {
         if (occluded) {
             name = name+"occluded";
-            logger.info("occluded tile: "+name+", X:"+X+", Z"+Z);
+            //logger.info("occluded tile: "+name+", X:"+X+", Z"+Z);
         }
         tiles.putCustomGlobalTile(world, name+"Tile", X, Z);
     }
     
     @SubscribeEvent
-    public void CityGenEvent(LostCityEvent.PostGenCityChunkEvent event )
+    public void worldGenEvent(LostCityEvent.PreExplosionEvent event )
     {
         TileAPI tiles = AtlasAPI.getTileAPI();
         
@@ -84,20 +85,17 @@ public class AntiqueCities
         if (tileID != -1) {
             adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
             tiledownistall = occluding.contains(adjtilename);
-            //logger.info("below tileID: "+tileID+ ", name:"+adjtilename+", tall:"+tiledownistall);
         }
         
         tileID = data.getBiomeIdAt(dimension, X, Z-1);
         boolean tileupisoccludable = false;
         if (tileID != -1) {
             adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
+            adjtilename = adjtilename.substring(0, adjtilename.length() - 4);  
             if (occludable.contains(adjtilename)) {
                 tileupisoccludable = true;
-                adjtilename = adjtilename.substring(0, adjtilename.length() - 4);  
-                //ExtTileTextureMap.instance().getTexture(adjtilename).name;
             } else {
             adjtilename= "";
-            //logger.info("above tileID: "+tileID+", name:"+adjtilename+", X: "+X+", Z: "+Z);
             }
         } else {
             adjtilename = "";
@@ -108,52 +106,109 @@ public class AntiqueCities
         LostCityChunkGenerator provider = WorldTypeTools.getChunkGenerator(dimension);
         
         ILostChunkInfo chunkinfo = generator.getChunkInfo(X, Z);
+
         BuildingInfo info = BuildingInfo.getBuildingInfo(X, Z, provider);
         
         String buildingtype = chunkinfo.getBuildingType();
         int floors = chunkinfo.getNumFloors();
         RailChunkType railtype = chunkinfo.getRailType();
         
-        if (buildingtype != null) {
-            if (floors < 3) {
-                putTile(tiles, world, "buildingshort", X, Z, tiledownistall);
-            } else if (floors < 6) {
-                putTile(tiles, world, "buildingmedium", X, Z, tiledownistall);
-            } else {
-                putTile(tiles, world, "buildingtall", X, Z, tiledownistall);
-                logger.info("X: "+X+", Z:"+Z+", up: "+adjtilename+", occludable:"+tileupisoccludable);
-                if (tileupisoccludable) {
-                    tiles.deleteCustomGlobalTile(world, X, Z-1);
-                    putTile(tiles, world, adjtilename, X, Z-1, true);
-                    logger.info("X: "+X+", Z:"+Z+", "+adjtilename);
-                } else {
-                    putTile(tiles, world, "buildingtallroof", X, Z-1, false);
+        if (chunkinfo.isCity())
+        {
+            if (buildingtype != null) {
+                String prefix = "building";
+                if (chunkinfo.getRuinLevel() > 0) {
+                    prefix = "ruin";
                 }
-            }
+                switch (floors) {
+                    case 1:
+                        putTile(tiles, world, prefix+"floor1", X, Z, tiledownistall);
+                        break;
+                    case 2:
+                        putTile(tiles, world, prefix+"floor2", X, Z, tiledownistall);
+                        break;
+                    case 3:
+                        putTile(tiles, world, prefix+"floor3", X, Z, tiledownistall);
+                        break;
+                    case 4:
+                        putTile(tiles, world, prefix+"floor4", X, Z, tiledownistall);
+                        break;
+                    case 5:
+                        putTile(tiles, world, prefix+"floor4", X, Z, tiledownistall);
+                        break;
+                    default:
+                        putTile(tiles, world, prefix+"tall", X, Z, tiledownistall);
+                        if ((tileupisoccludable) && (prefix == "building")) {
+                            tiles.deleteCustomGlobalTile(world, X, Z-1);
+                            putTile(tiles, world, adjtilename, X, Z-1, true);
+                            //logger.info("X: "+X+", Z:"+Z+", "+adjtilename);
+                        } else {
+                            putTile(tiles, world, "buildingtallroof", X, Z-1, false);
+                        }
+                        break;
+                }
+            } else {
+                switch (railtype) {
+                    case STATION_SURFACE: 
+                        putTile(tiles, world, "trainstationroofed", X, Z, tiledownistall);
+                        break;
+                    case STATION_EXTENSION_SURFACE: 
+                        putTile(tiles, world, "trainstationopen", X, Z, tiledownistall);
+                        break;
+                    case GOING_DOWN_TWO_FROM_SURFACE:
+                    case GOING_DOWN_ONE_FROM_SURFACE:
+                        Railway.RailChunkInfo railInfo = 
+                            Railway.getRailChunkType(X, Z, provider, info.profile);
+                        if (railInfo.getDirection() == Railway.RailDirection.WEST) {
+                            putTile(tiles, world, "trainrampleft", X, Z, tiledownistall);
+                        } else {
+                            putTile(tiles, world, "trainrampright", X, Z, tiledownistall);
+                        }
+                        break;
+                    default:
+                        BuildingInfo.StreetType streetType = info.streetType;
+                        BuildingPart fountainType = info.fountainType;
+                        BuildingPart parkType = info.parkType;
+                        
+                        if (streetType == BuildingInfo.StreetType.PARK ) {
+                            if (parkType.getName().toLowerCase().contains("fountain")) {
+                                putTile(tiles, world, "fountain", X, Z, tiledownistall);
+                            } else {
+                                putTile(tiles, world, "park", X, Z, tiledownistall);
+                            }
+                        } else if (fountainType != null) {
+                                putTile(tiles, world, "fountain", X, Z, tiledownistall);
+                        } else {
+                            putTile(tiles, world, "street", X, Z, tiledownistall);
+                        }
+                }
+         
+            }           
+
         } else {
-            switch (railtype) {
-                case STATION_SURFACE: 
-                    putTile(tiles, world, "trainstationroofed", X, Z, tiledownistall);
-                    break;
-                case STATION_EXTENSION_SURFACE: 
-                    putTile(tiles, world, "trainstationopen", X, Z, tiledownistall);
-                    break;
-                case GOING_DOWN_TWO_FROM_SURFACE:
-                case GOING_DOWN_ONE_FROM_SURFACE:
-                //case GOING_DOWN_FURTHER:
-                    Railway.RailChunkInfo railInfo = 
-                        Railway.getRailChunkType(X, Z, provider, info.profile);
-                    if (railInfo.getDirection() == Railway.RailDirection.WEST) {
-                        putTile(tiles, world, "trainrampleft", X, Z, tiledownistall);
-                    } else {
-                        putTile(tiles, world, "trainrampright", X, Z, tiledownistall);
-                    }
-                    break;
-                default:
-                    putTile(tiles, world, "street", X, Z, tiledownistall);
+            BuildingPart bridgex = info.hasXBridge(provider);
+            BuildingPart bridgez = info.hasZBridge(provider);
+            
+            
+            if (bridgex != null) {
+                //logger.info("Bridge?: X:"+X+", Z: "+Z+", "+bridgex.getName()+"x");
+                putTile(tiles, world, bridgex.getName()+"x", X, Z, tiledownistall);
+                
+                //+ ", bridgez:"+bridgez+"+, type:"+info.bridgeType.getName());
+            } else if (bridgez != null) {
+                //logger.info("Bridge?: X:"+X+", Z: "+Z+", "+bridgez.getName()+"z");
+                putTile(tiles, world, bridgez.getName()+"z", X, Z, tiledownistall);
             }
-                    
         }
+        int highwayx = info.getHighwayXLevel();
+        int highwayz = info.getHighwayZLevel();
+        
+        if (highwayx > highwayz) {
+            putTile(tiles, world, "highwayx", X, Z, tiledownistall);
+        } else if (highwayz > highwayx) {
+            putTile(tiles, world, "highwayz", X, Z, tiledownistall);
+        }
+        
         
         /*        
         if (generator.getChunkInfo(X, Z).getBuildingType() != null) {
@@ -187,26 +242,36 @@ public class AntiqueCities
     
     @EventHandler
     public void PostInit(FMLPostInitializationEvent event) {
-        occludable.add("buildingshortTile");
-        occludable.add("buildingmediumTile");
-        occludable.add("buildingtallTile");
-        occludable.add("trainrampleftTile");
-        occludable.add("trainramprightTile");
-        occludable.add("trainstationopenTile");
-        occludable.add("trainstationroofedTile");
+        occludable.add("buildingfloor1");
+        occludable.add("buildingfloor2");
+        occludable.add("buildingfloor3");
+        occludable.add("buildingfloor4");
+        occludable.add("buildingtall");
+        occludable.add("trainrampleft");
+        occludable.add("trainrampright");
+        occludable.add("trainstationopen");
+        occludable.add("trainstationroofed");
         occludable.add("street");
+        occludable.add("bridgexopen");
+        occludable.add("bridgezopen");
+        occludable.add("bridgexcovered");
+        occludable.add("bridgezcovered");
+        occludable.add("highwayx");
+        occludable.add("highwayz");
+        occludable.add("park");
+        occludable.add("fountain");
         
-        occluding.add("buildingtallTile");
-        occluding.add("buildingtalloccludedTile");
+        occluding.add("buildingtall");
+        occluding.add("buildingtalloccluded");
         
-        trainpart.add("trainstationopenTile");
-        trainpart.add("trainstationroofedTile");
-        trainpart.add("trainrampleftTile");
-        trainpart.add("trainramprightTile");
-        trainpart.add("trainstationopenoccludedTile");
-        trainpart.add("trainstationroofedoccludedTile");
-        trainpart.add("trainrampleftoccludedTile");
-        trainpart.add("trainramprightoccludedTile");
+        trainpart.add("trainstationopen");
+        trainpart.add("trainstationroofed");
+        trainpart.add("trainrampleft");
+        trainpart.add("trainrampright");
+        trainpart.add("trainstationopenoccluded");
+        trainpart.add("trainstationroofedoccluded");
+        trainpart.add("trainrampleftoccluded");
+        trainpart.add("trainramprightoccluded");
         
         
         proxy.postInit(event);
