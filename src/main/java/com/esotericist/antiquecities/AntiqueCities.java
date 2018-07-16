@@ -84,7 +84,7 @@ public class AntiqueCities
         boolean tiledownistall = false;
         if (tileID != -1) {
             adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
-            tiledownistall = occluding.contains(adjtilename);
+            tiledownistall = occluding.contains(adjtilename.substring(0, adjtilename.length() - 4));
         }
         
         tileID = data.getBiomeIdAt(dimension, X, Z-1);
@@ -92,6 +92,7 @@ public class AntiqueCities
         if (tileID != -1) {
             adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
             adjtilename = adjtilename.substring(0, adjtilename.length() - 4);  
+            //logger.info("occludable check: X:"+X+", Z:"+(Z-1)+", "+adjtilename);
             if (occludable.contains(adjtilename)) {
                 tileupisoccludable = true;
             } else {
@@ -112,6 +113,7 @@ public class AntiqueCities
         String buildingtype = chunkinfo.getBuildingType();
         int floors = chunkinfo.getNumFloors();
         RailChunkType railtype = chunkinfo.getRailType();
+        int citylevel = info.cityLevel;
         
         if (chunkinfo.isCity())
         {
@@ -138,12 +140,14 @@ public class AntiqueCities
                         break;
                     default:
                         putTile(tiles, world, prefix+"tall", X, Z, tiledownistall);
+                        //logger.info("placing tall: X:"+X+", Z:"+Z+", above: "+adjtilename);
                         if ((tileupisoccludable) && (prefix == "building")) {
                             tiles.deleteCustomGlobalTile(world, X, Z-1);
                             putTile(tiles, world, adjtilename, X, Z-1, true);
-                            //logger.info("X: "+X+", Z:"+Z+", "+adjtilename);
+                            //logger.info("occlusion placed: X:"+X+", Z:"+(Z-1)+", "+adjtilename);
                         } else {
                             putTile(tiles, world, "buildingtallroof", X, Z-1, false);
+                            //logger.info("roof placed: X:"+X+", Z:"+Z+", "+adjtilename);
                         }
                         break;
                 }
@@ -173,13 +177,17 @@ public class AntiqueCities
                         if (streetType == BuildingInfo.StreetType.PARK ) {
                             if (parkType.getName().toLowerCase().contains("fountain")) {
                                 putTile(tiles, world, "fountain", X, Z, tiledownistall);
+                                //logger.info("fountain tile, X:"+X+", Z:"+Z+", down tall:"+tiledownistall);
                             } else {
                                 putTile(tiles, world, "park", X, Z, tiledownistall);
+                                //logger.info("park tile, X:"+X+", Z:"+Z+", down tall:"+tiledownistall);
                             }
                         } else if (fountainType != null) {
                                 putTile(tiles, world, "fountain", X, Z, tiledownistall);
+                                //logger.info("fountain tile, X:"+X+", Z:"+Z+", down tall:"+tiledownistall);
                         } else {
                             putTile(tiles, world, "street", X, Z, tiledownistall);
+                            //logger.info("street tile, X:"+X+", Z:"+Z+", down tall:"+tiledownistall);
                         }
                 }
          
@@ -191,22 +199,24 @@ public class AntiqueCities
             
             
             if (bridgex != null) {
-                //logger.info("Bridge?: X:"+X+", Z: "+Z+", "+bridgex.getName()+"x");
+                //logger.info("Bridge?: X:"+X+", Z:"+Z+", "+bridgex.getName()+"x");
                 putTile(tiles, world, bridgex.getName()+"x", X, Z, tiledownistall);
                 
                 //+ ", bridgez:"+bridgez+"+, type:"+info.bridgeType.getName());
             } else if (bridgez != null) {
-                //logger.info("Bridge?: X:"+X+", Z: "+Z+", "+bridgez.getName()+"z");
+                //logger.info("Bridge?: X:"+X+", Z:"+Z+", "+bridgez.getName()+"z");
                 putTile(tiles, world, bridgez.getName()+"z", X, Z, tiledownistall);
             }
         }
         int highwayx = info.getHighwayXLevel();
         int highwayz = info.getHighwayZLevel();
         
-        if (highwayx > highwayz) {
+        if ((highwayx > highwayz) && (highwayx >= citylevel)) {
             putTile(tiles, world, "highwayx", X, Z, tiledownistall);
-        } else if (highwayz > highwayx) {
+        } else if ((highwayz > highwayx) && (highwayz >= citylevel)) {
             putTile(tiles, world, "highwayz", X, Z, tiledownistall);
+        } else if ((highwayx == highwayz) && (highwayx >= citylevel)) {
+            putTile(tiles, world, "highwayintersection", X, Z, tiledownistall);
         }
         
         
@@ -258,8 +268,15 @@ public class AntiqueCities
         occludable.add("bridgezcovered");
         occludable.add("highwayx");
         occludable.add("highwayz");
+        occludable.add("highwayintersection");
         occludable.add("park");
         occludable.add("fountain");
+        occludable.add("ruinfloor1");
+        occludable.add("ruinfloor2");
+        occludable.add("ruinfloor3");
+        occludable.add("ruinfloor4");
+        occludable.add("ruintall");
+        
         
         occluding.add("buildingtall");
         occluding.add("buildingtalloccluded");

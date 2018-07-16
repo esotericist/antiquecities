@@ -61,6 +61,7 @@ public class ClientProxy extends CommonProxy {
         
         TextureSet highwayx = newTile("highwayx");
         TextureSet highwayz = newTile("highwayz");
+        TextureSet highwayinter = newTile("highwayintersection");
 
         TextureSet fountain = newTile("fountain");
         TextureSet park = newTile("park");
@@ -88,8 +89,14 @@ public class ClientProxy extends CommonProxy {
         TextureSet trainstationopenocc = newTile("trainstationopenoccluded");
         TextureSet trainstationroofedocc = newTile("trainstationroofedoccluded");
 
+        TextureSet ruinfloor1occ = newTile("ruinfloor1occluded");
+        TextureSet ruinfloor2occ = newTile("ruinfloor2occluded");
+        TextureSet ruinfloor3occ = newTile("ruinfloor3occluded");
+        TextureSet ruinfloor4occ = newTile("ruinfloor4occluded");
+
         TextureSet highwayxocc = newTile("highwayxoccluded");
         TextureSet highwayzocc = newTile("highwayzoccluded");
+        TextureSet highwayinterocc = newTile("highwayintersectionoccluded");
 
         TextureSet fountainocc = newTile("fountainoccluded");
         TextureSet parkocc = newTile("parkoccluded");
