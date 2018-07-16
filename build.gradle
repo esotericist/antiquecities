@@ -62,6 +62,7 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
     
     
+    compile 'org.apache.commons:commons-lang3:3.0'
     compile files ("deps/antiqueatlas-1.12.2-4.4.9-deobf.jar")
     compile files ("deps/lostcities-1.12-2.0.10.jar")
     //deobfCompile "com.github.mcjty:lostcities:1.12-2.0.3"

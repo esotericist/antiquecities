@@ -42,6 +42,8 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 
 @Mod(modid = AntiqueCities.MODID, name = AntiqueCities.NAME, version = AntiqueCities.VERSION, acceptedMinecraftVersions = "[1.12,1.12.2]", dependencies = AntiqueCities.dependencies)
@@ -67,6 +69,17 @@ public class AntiqueCities
         tiles.putCustomGlobalTile(world, name+"Tile", X, Z);
     }
     
+    private String getTile(int dimension, int X, int Z) {
+        ExtBiomeData data = AntiqueAtlasMod.extBiomeData.getData();
+        int tileID = data.getBiomeIdAt(dimension, X, Z);
+        String tilename = "";
+        if (tileID != -1) {
+            tilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
+            StringUtils.removeEnd(tilename, "Tile");
+        }
+        return tilename;
+    }
+    
     @SubscribeEvent
     public void worldGenEvent(LostCityEvent.PreExplosionEvent event )
     {
@@ -78,30 +91,12 @@ public class AntiqueCities
         int X = event.getChunkX();// * 16;
         int Z = event.getChunkZ();// * 16;
         
-        ExtBiomeData data = AntiqueAtlasMod.extBiomeData.getData();
-        int tileID = data.getBiomeIdAt(dimension, X, Z+1);
-        String adjtilename = "";
-        boolean tiledownistall = false;
-        if (tileID != -1) {
-            adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
-            tiledownistall = occluding.contains(adjtilename.substring(0, adjtilename.length() - 4));
-        }
         
-        tileID = data.getBiomeIdAt(dimension, X, Z-1);
-        boolean tileupisoccludable = false;
-        if (tileID != -1) {
-            adjtilename = ExtTileIdMap.instance().getPseudoBiomeName(tileID);
-            adjtilename = adjtilename.substring(0, adjtilename.length() - 4);  
-            //logger.info("occludable check: X:"+X+", Z:"+(Z-1)+", "+adjtilename);
-            if (occludable.contains(adjtilename)) {
-                tileupisoccludable = true;
-            } else {
-            adjtilename= "";
-            }
-        } else {
-            adjtilename = "";
-        }
-
+        String belowtile = getTile(dimension, X, Z+1);
+        boolean tiledownistall = occluding.contains(belowtile);
+        
+        String abovetile = getTile(dimension, X, Z-1);
+        boolean tileupisoccludable = occludable.contains(abovetile);
         
         ILostChunkGenerator generator = event.getGenerator();
         LostCityChunkGenerator provider = WorldTypeTools.getChunkGenerator(dimension);
@@ -143,7 +138,7 @@ public class AntiqueCities
                         //logger.info("placing tall: X:"+X+", Z:"+Z+", above: "+adjtilename);
                         if ((tileupisoccludable) && (prefix == "building")) {
                             tiles.deleteCustomGlobalTile(world, X, Z-1);
-                            putTile(tiles, world, adjtilename, X, Z-1, true);
+                            putTile(tiles, world, abovetile, X, Z-1, true);
                             //logger.info("occlusion placed: X:"+X+", Z:"+(Z-1)+", "+adjtilename);
                         } else {
                             putTile(tiles, world, "buildingtallroof", X, Z-1, false);
